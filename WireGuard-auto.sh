@@ -59,7 +59,7 @@ wg_server_config()
 #		mkdir -m 0644 $-p wg_dir/$wg_secret_dir
 #	fi
 
-	wg genkey | sudo tee /etc/wireguard/secret/server.key | wg pubkey | sudo tee /etc/wireguard/secret/server.pub > /dev/null
+	wg genkey | sudo tee $wg_secret_dir/server.key | wg pubkey | sudo tee $wg_secret_dir/server.pub > /dev/null
 
 	srv_priv_key=`cat /etc/wireguard/secret/server.key`
 
@@ -82,9 +82,9 @@ wg_add_client()
 	echo -n "Tekan enter untuk menambahkan klien"
 	read presskey
 
-	read -p "Nama interface Wireguard yang akan ditambah klien(Default: wg1): "
+	read -p "Nama interface Wireguard yang akan ditambah klien(Default: wg1): " wg_int
 
-	read -p "Nama untuk klien (default: client1); "
+	read -p "Nama untuk klien (default: client1); " wg_client_name
 
 	read -p "IP yang akan dijadikan endpoint untuk wireguard (Default ip lokal server kalian: $IP_DEFAULT_SERVER): " WG_ENDPOINT
 
@@ -98,14 +98,28 @@ wg_add_client()
 	SUBNET=`tail -n 1 /tmp/wg_ip.txt | cut -d " " -f 3 | cut -d "." -f 4 |cut -d "/" -f 2`
 	WG_PORT=`cat /etc/wireguard/wg1.conf | grep Port | cut -d " " -f 3`
 	
+	if [ -z $wg_int ]
+	then
+		wg_int=wg1
+
 	if [ -z WG_ENDPOINT ]
 	then
-		WG_ENDPOINT=`hostname -i | cut -d " " -f1`
+		WG_ENDPOINT=$IP_DEFAULT_SERVER
 	fi
 
 	IP_KLIEN_USE=$IP_BLOK1.$IP_BLOK2.$IP_BLOK3.$IP_BLOK4_PARSE/$SUBNET
 
+	echo -e "Sedang menambahkan klien $wg_wlient_name"
 
+	wg genkey | sudo tee $wg_secret_dir/$wg_client_name.key | wg pubkey | sudo tee $wg_secret_dir/$wg_client_name.pub > /dev/null
+
+	wg_client_key=`cat $wg_secret_dir/$wg_client_name.key`
+	wg_client_pub=`cat $wg_secret_dir/$wg_client_name.pub`
+
+	echo "
+	[Peer]
+	PublicKey = $wg_client_pub
+	AllowedIPs = $IP_KLIEN_USE" >> $wg_dir/$wg_int.conf
 
 }
 
